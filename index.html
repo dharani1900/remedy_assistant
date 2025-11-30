@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Home Remedy Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+  body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(to bottom right, #fbcfe8, #bae6fd);
+    color: #1e293b;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    transition: background-color 0.5s, color 0.5s;
+  }
+  body.dark {
+    background: #111827;
+    color: #f3f4f6;
+  }
+  #app-container {
+    background: rgba(255 255 255 / 0.8);
+    box-shadow: 0 10px 25px rgb(0 0 0 / 0.15);
+    max-width: 700px;
+    width: 100%;
+    height: 90vh;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: background-color 0.5s;
+  }
+  body.dark #app-container {
+    background: rgba(31 41 55 / 0.9);
+  }
+  header {
+    background: linear-gradient(to right, #ec4899, #8b5cf6);
+    padding: 1rem 1.5rem;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    box-shadow: 0 5px 15px rgb(236 72 153 / 0.4);
+  }
+  header h1 {
+    font-weight: 700;
+    font-size: 1.5rem;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 1.5rem;
+    background: rgba(255 255 255 / 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 0 0 1rem 1rem;
+    scrollbar-width: thin;
+  }
+  main::-webkit-scrollbar {
+    width: 8px;
+  }
+  main::-webkit-scrollbar-thumb {
+    background-color: #a78bfa;
+    border-radius: 10px;
+  }
+  body.dark main {
+    background: rgba(31 41 55 / 0.7);
+  }
+  .message {
+    max-width: 75%;
+    margin-bottom: 1rem;
+    padding: 0.9rem 1.2rem;
+    border-radius: 1.5rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    box-shadow: 0 3px 8px rgb(0 0 0 / 0.1);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  .message.user {
+    margin-left: auto;
+    background: #bae6fd;
+    color: #0c4a6e;
+    border-radius: 1.5rem 1.5rem 0 1.5rem;
+    box-shadow: 0 4px 15px rgb(59 130 246 / 0.4);
+  }
+  body.dark .message.user {
+    background: #2563eb;
+    color: #dbeafe;
+    box-shadow: 0 4px 15px rgb(147 197 253 / 0.5);
+  }
+  .message.bot {
+    margin-right: auto;
+    background: #fecdd3;
+    border: 1px solid #fbcfe8;
+    color: #831843;
+    border-radius: 1.5rem 1.5rem 1.5rem 0;
+  }
+  body.dark .message.bot {
+    background: #be185d;
+    color: #fce7f3;
+    border-color: #f472b6;
+  }
+  footer {
+    padding: 1rem 1.5rem;
+    display: flex;
+    gap: 0.75rem;
+    background: white;
+    box-shadow: 0 -5px 15px rgb(236 72 153 / 0.1);
+    border-bottom-left-radius: 1rem;
+    border-bottom-right-radius: 1rem;
+    align-items: center;
+  }
+  body.dark footer {
+    background: #1f2937;
+    box-shadow: 0 -5px 15px rgb(236 72 153 / 0.25);
+  }
+  textarea {
+    flex: 1;
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    resize: none;
+    height: 3rem;
+    transition:
+      background-color 0.3s,
+      border-color 0.3s,
+      color 0.3s;
+  }
+  body.dark textarea {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  textarea::placeholder {
+    color: #9ca3af;
+  }
+  button.send-btn {
+    background: linear-gradient(to right, #7c3aed, #4338ca);
+    border: none;
+    border-radius: 1rem;
+    color: white;
+    font-weight: 600;
+    padding: 0 1.5rem;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 3rem;
+  }
+  button.send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  button#mic-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.75rem;
+    color: #4338ca;
+    transition: color 0.3s;
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  button#mic-btn:active {
+    color: #7c3aed;
+  }
+  .loader {
+    border: 3px solid rgba(255, 255, 255, 0.6);
+    border-top-color: white;
+    border-radius: 50%;
+    width: 1.25rem;
+    height: 1.25rem;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .message.bot ol {
+    padding-left: 1.25rem;
+    margin: 0.5rem 0;
+    list-style: decimal inside;
+  }
+  #lang-select {
+    margin-right: 0.75rem;
+    color: #1e293b !important;
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid #fffefe;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    transition: background-color 0.3s, border-color 0.3s;
+    height: 3rem;
+    user-select: none;
+  }
+  body.dark #lang-select {
+    background: #374151;
+    border-color: #4b5563;
+     color: #f3f4f6 !important;
+  }
+</style>
+</head>
+<body>
+  <div id="app-container" role="main" aria-label="Home Remedy Chatbot" >
+    <header>
+      <h1>💬 Home Remedy Assistant</h1>
+      <div class="flex items-center gap-2">
+        <select id="lang-select" aria-label="Select language">
+          <option value="en" selected>English</option>
+          <option value="hi">हिन्दी</option>
+        </select>
+        <button id="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode" style="background:none; border:none; color:white; cursor:pointer; font-size:1.5rem;">🌙</button>
+      </div>
+    </header>
+
+    <main id="chat-window" tabindex="0" aria-live="polite" role="log" aria-relevant="additions"></main>
+
+    <footer>
+      <textarea id="user-input" aria-label="Type your minor symptom description" placeholder="Describe your minor symptom..." rows="1"></textarea>
+      <button id="mic-btn" aria-label="Speak your symptom" title="Speak your symptom">🎤</button>
+      <button class="send-btn" id="send-btn" disabled aria-disabled="true" aria-label="Send symptom query">Ask</button>
+    </footer>
+  </div>
+
+  <script>
+    const chatWindow = document.getElementById('chat-window');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    const micBtn = document.getElementById('mic-btn');
+    const langSelect = document.getElementById('lang-select');
+
+    // Remedies dictionary supporting English & Hindi
+    const remedies = {
+      en: {
+        headache: `Hello! Dealing with a headache is tough, but these self-care steps can bring relief. Start with the simplest actions first:
+
+1. *Hydrate Immediately (Level 1):* Drink a large glass of water slowly. Dehydration is a very common cause of tension headaches.
+2. *Temperature Therapy (Level 2):* Apply a cold pack or frozen towel to your forehead or the back of your neck for 10-15 minutes.
+3. *Temple Massage (Level 3):* Use your fingertips to gently massage your temples and the base of your skull in slow, circular motions for two minutes.
+4. *Darkness and Quiet (Level 4):* Find a dark, quiet room and close your eyes for 15 minutes to allow your nervous system to rest.
+5. *Aromatherapy (Level 5):* Gently inhale the scent of peppermint or lavender essential oil (avoid direct skin contact near eyes).
+6. *Tension Release Stretch (Level 6):* Perform slow neck rolls, dropping your chin to your chest and then gently bringing your ear toward your shoulder on each side.
+7. *Mindful Breathing (Level 7):* Practice box breathing (inhale 4, hold 4, exhale 4, hold 4) for five minutes to reduce overall body tension.
+
+Remember, if the pain worsens or persists, please consult a healthcare professional.`,
+
+        'sore throat': `Here are some easy remedies for a sore throat:
+
+1. *Gargle warm salt water (Level 1).*
+2. *Drink warm herbal tea with honey (Level 2).*
+3. *Use throat lozenges (Level 3).*
+4. *Stay hydrated throughout the day (Level 4).*
+5. *Humidify your room (Level 5).*
+6. *Rest your voice (Level 6).*
+7. *Avoid irritants like smoke (Level 7).*
+
+If symptoms worsen, please seek medical advice.`,
+
+        default: Sorry, I don't have a specific remedy for that symptom yet. Try "headache" or "sore throat".
+      },
+      hi: {
+        headache: `सरदर्द के लिए ये घरेलू उपाय मदद कर सकते हैं:
+
+1. *जल जल्दी पिएं (स्तर 1):* धीरे-धीरे एक बड़ा गिलास पानी पिएं। निर्जलीकरण सिरदर्द का एक आम कारण है।
+2. *ठंडी पट्टी (स्तर 2):* माथे या गर्दन के पीछे 10-15 मिनट के लिए ठंडी पट्टी लगाएं।
+3. *माथे की मालिश (स्तर 3):* धीरे-धीरे अपने माथे और गर्दन के पीछे उंगलियों से मालिश करें।
+4. *अंधेरे और शांत कमरे में आराम (स्तर 4):* 15 मिनट के लिए आंखें बंद करके आराम करें।
+5. *खुशबू चिकित्सा (स्तर 5):* पुदीना या लैवेंडर के तेल की खुशबू सूंघें (धीरे-धीरे)।
+6. *गरदन की स्ट्रेचिंग (स्तर 6):* गर्दन धीरे-धीरे घुमाएं।
+7. *धीमी साँस लेना (स्तर 7):* साँस लें, रोकें, छोड़ें, रोकें (4 सेकंड का बॉक्स ब्रेथिंग)। 
+
+अगर दर्द बढ़े या बना रहे, तो डॉक्टर से संपर्क करें।`,
+
+        'sore throat': `गले में खराश के लिए ये उपाय अपनाएं:
+
+1. *गर्म नमक पानी से गरारा करें (स्तर 1)।*
+2. *शहद वाली हर्बल चाय पिएं (स्तर 2)।*
+3. *गला साफ करने वाली गोलियाँ लें (स्तर 3)।*
+4. *पूरा दिन पानी पिएं (स्तर 4)।*
+5. *कमरे में नमी बढ़ाएं (स्तर 5)।*
+6. *अपनी आवाज़ को आराम दें (स्तर 6)।*
+7. *धूम्रपान से बचें (स्तर 7)।*
+
+लक्षण बिगड़ने पर डॉक्टर से सलाह लें।`,
+
+        default: माफ़ करें, उस लक्षण के लिए मेरे पास अभी कोई विशेष उपाय नहीं है। कृपया "सरदर्द" या "गले में खराश" जैसे सामान्य लक्षण आज़माएं।
+      }
+    };
+
+    function formatContent(text) {
+      return text
+        .replace(/\\(.?)\\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br />');
+    }
+
+    function appendMessage(content, sender) {
+      const div = document.createElement('div');
+      div.className = message ${sender};
+      div.innerHTML = formatContent(content);
+      chatWindow.appendChild(div);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function showLoading() {
+      sendBtn.disabled = true;
+      const loader = document.createElement('div');
+      loader.className = 'message bot loader-bubble';
+      loader.innerHTML = <div class="loader" role="status" aria-live="polite" aria-label="Loading"></div>;
+      chatWindow.appendChild(loader);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+      return loader;
+    }
+
+    function removeLoading(loader) {
+      if (loader) loader.remove();
+      sendBtn.disabled = false;
+    }
+
+    function getRemedy(symptom, lang = 'en') {
+      const key = symptom.trim().toLowerCase();
+      return remedies[lang][key] || remedies[lang].default;
+    }
+
+    function saveChat() {
+      const data = [];
+      chatWindow.querySelectorAll('.message').forEach(div => {
+        data.push({
+          sender: div.classList.contains('user') ? 'user' : 'bot',
+          content: div.innerHTML
+        });
+      });
+      localStorage.setItem('chatHistory', JSON.stringify(data));
+      localStorage.setItem('selectedLang', langSelect.value);
+    }
+
+    function loadChat() {
+      const data = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+      data.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = message ${msg.sender};
+        div.innerHTML = msg.content;
+        chatWindow.appendChild(div);
+      });
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+      const storedLang = localStorage.getItem('selectedLang');
+      if (storedLang && remedies[storedLang]) {
+        langSelect.value = storedLang;
+      }
+    }
+
+    userInput.addEventListener('input', () => {
+      sendBtn.disabled = userInput.value.trim() === '';
+      sendBtn.setAttribute('aria-disabled', sendBtn.disabled.toString());
+    });
+
+    sendBtn.addEventListener('click', () => {
+      const input = userInput.value.trim();
+      if (!input) return;
+      appendMessage(input, 'user');
+      userInput.value = '';
+      sendBtn.disabled = true;
+
+      saveChat();
+
+      const loader = showLoading();
+
+      setTimeout(() => {
+        removeLoading(loader);
+        const remedy = getRemedy(input, langSelect.value);
+        appendMessage(remedy, 'bot');
+        saveChat();
+      }, 1500);
+    });
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!sendBtn.disabled) sendBtn.click();
+      }
+    });
+
+    darkModeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      darkModeToggle.textContent = document.body.classList.contains('dark') ? '☀' : '🌙';
+    });
+    darkModeToggle.textContent = '🌙';
+
+    micBtn.addEventListener('click', () => {
+      if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+        alert('Sorry, your browser does not support Speech Recognition.');
+        return;
+      }
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = langSelect.value === 'hi' ? 'hi-IN' : 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      micBtn.disabled = true;
+      micBtn.textContent = '🎙...';
+
+      recognition.onresult = (event) => {
+        const speechResult = event.results[0][0].transcript;
+        userInput.value = speechResult;
+        sendBtn.disabled = false;
+        sendBtn.setAttribute('aria-disabled', 'false');
+        userInput.focus();
+      };
+
+      recognition.onerror = () => {
+        alert('Speech recognition error. Please try again.');
+      };
+
+      recognition.onend = () => {
+        micBtn.disabled = false;
+        micBtn.textContent = '🎤';
+      };
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadChat();
+      if (chatWindow.children.length === 0) {
+        appendMessage("*Welcome!* I am your Home Remedy Guide. Tell me your minor symptom, and I'll provide helpful remedies.", 'bot');
+      }
+    });
+  </script>
+</body>
+</html>
