@@ -153,7 +153,7 @@
     border-radius: 1rem;
     color: white;
     font-weight: 600;
-    padding: 0 1.5rem;
+    padding: 0 1rem;
     cursor: pointer;
     transition: opacity 0.3s ease;
     display: flex;
@@ -213,236 +213,193 @@
   body.dark #lang-select {
     background: #374151;
     border-color: #4b5563;
-     color: #f3f4f6 !important;
+    color: #f3f4f6 !important;
   }
 </style>
 </head>
 <body>
-  <div id="app-container" role="main" aria-label="Home Remedy Chatbot" >
-    <header>
-      <h1>💬 Home Remedy Assistant</h1>
-      <div class="flex items-center gap-2">
-        <select id="lang-select" aria-label="Select language">
-          <option value="en" selected>English</option>
-          <option value="hi">हिन्दी</option>
-        </select>
-        <button id="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode" style="background:none; border:none; color:white; cursor:pointer; font-size:1.5rem;">🌙</button>
-      </div>
-    </header>
+<div id="app-container" role="main" aria-label="Home Remedy Chatbot">
+  <header>
+    <h1>💬 Home Remedy Assistant</h1>
+    <div class="flex items-center gap-2">
+      <select id="lang-select" aria-label="Select language">
+        <option value="en" selected>English</option>
+        <option value="hi">हिन्दी</option>
+      </select>
+      <button id="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode" style="background:none; border:none; color:white; cursor:pointer; font-size:1.5rem;">🌙</button>
+      <button id="clear-chat" class="send-btn">Clear Chat</button>
+    </div>
+  </header>
 
-    <main id="chat-window" tabindex="0" aria-live="polite" role="log" aria-relevant="additions"></main>
+  <main id="chat-window" tabindex="0" aria-live="polite" role="log" aria-relevant="additions"></main>
 
-    <footer>
-      <textarea id="user-input" aria-label="Type your minor symptom description" placeholder="Describe your minor symptom..." rows="1"></textarea>
-      <button id="mic-btn" aria-label="Speak your symptom" title="Speak your symptom">🎤</button>
-      <button class="send-btn" id="send-btn" disabled aria-disabled="true" aria-label="Send symptom query">Ask</button>
-    </footer>
-  </div>
+  <footer>
+    <textarea id="user-input" aria-label="Type your minor symptom description" placeholder="Describe your minor symptom..." rows="1"></textarea>
+    <button id="mic-btn" aria-label="Speak your symptom" title="Speak your symptom">🎤</button>
+    <button class="send-btn" id="send-btn" disabled aria-disabled="true" aria-label="Send symptom query">Ask</button>
+  </footer>
+</div>
 
-  <script>
-    const chatWindow = document.getElementById('chat-window');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    const micBtn = document.getElementById('mic-btn');
-    const langSelect = document.getElementById('lang-select');
+<script>
+const chatWindow = document.getElementById('chat-window');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const darkModeToggle = document.getElementById('dark-mode-toggle');
+const micBtn = document.getElementById('mic-btn');
+const langSelect = document.getElementById('lang-select');
+const clearBtn = document.getElementById('clear-chat');
 
-    // Remedies dictionary supporting English & Hindi
-    const remedies = {
-      en: {
-        headache: `Hello! Dealing with a headache is tough, but these self-care steps can bring relief. Start with the simplest actions first:
+// Remedies dictionary
+const remedies = {
+  en: {
+    headache: `Hello! Dealing with a headache is tough, but these self-care steps can bring relief:<br>
+1. <strong>Hydrate Immediately (Level 1)</strong>.<br>
+2. <strong>Temperature Therapy (Level 2)</strong>.<br>
+3. <strong>Temple Massage (Level 3)</strong>.<br>
+4. <strong>Darkness and Quiet (Level 4)</strong>.<br>
+5. <strong>Aromatherapy (Level 5)</strong>.<br>
+6. <strong>Tension Release Stretch (Level 6)</strong>.<br>
+7. <strong>Mindful Breathing (Level 7)</strong>.<br>Consult doctor if worsens.`,
+    'sore throat': `Remedies for sore throat:<br>
+1. <strong>Gargle warm salt water (Level 1)</strong>.<br>
+2. <strong>Drink warm herbal tea with honey (Level 2)</strong>.<br>
+3. <strong>Throat lozenges (Level 3)</strong>.<br>
+4. <strong>Stay hydrated (Level 4)</strong>.<br>
+5. <strong>Humidify your room (Level 5)</strong>.<br>
+6. <strong>Rest your voice (Level 6)</strong>.<br>
+7. <strong>Avoid irritants (Level 7)</strong>.<br>Seek medical advice if worsens.`,
+    default: `Sorry, I don't have a remedy for that symptom. Try "headache" or "sore throat".`
+  },
+  hi: {
+    headache: `सरदर्द के लिए उपाय:<br>
+1. <strong>जल जल्दी पिएं (स्तर 1)</strong>.<br>
+2. <strong>ठंडी पट्टी (स्तर 2)</strong>.<br>
+3. <strong>माथे की मालिश (स्तर 3)</strong>.<br>
+4. <strong>अंधेरे और शांत कमरे में आराम (स्तर 4)</strong>.<br>
+5. <strong>खुशबू चिकित्सा (स्तर 5)</strong>.<br>
+6. <strong>गरदन की स्ट्रेचिंग (स्तर 6)</strong>.<br>
+7. <strong>धीमी साँस लेना (स्तर 7)</strong>.<br>डॉक्टर से संपर्क करें यदि दर्द बढ़े।`,
+    'sore throat': `गले में खराश के लिए उपाय:<br>
+1. <strong>गर्म नमक पानी से गरारा करें (स्तर 1)</strong>.<br>
+2. <strong>शहद वाली हर्बल चाय पिएं (स्तर 2)</strong>.<br>
+3. <strong>गला साफ करने वाली गोलियाँ लें (स्तर 3)</strong>.<br>
+4. <strong>पूरा दिन पानी पिएं (स्तर 4)</strong>.<br>
+5. <strong>कमरे में नमी बढ़ाएं (स्तर 5)</strong>.<br>
+6. <strong>अपनी आवाज़ को आराम दें (स्तर 6)</strong>.<br>
+7. <strong>धूम्रपान से बचें (स्तर 7)</strong>.<br>डॉक्टर से सलाह लें यदि लक्षण बिगड़ें।`,
+    default: `माफ़ करें, उस लक्षण के लिए उपाय नहीं है। "सरदर्द" या "गले में खराश" आज़माएं।`
+  }
+};
 
-1. *Hydrate Immediately (Level 1):* Drink a large glass of water slowly. Dehydration is a very common cause of tension headaches.
-2. *Temperature Therapy (Level 2):* Apply a cold pack or frozen towel to your forehead or the back of your neck for 10-15 minutes.
-3. *Temple Massage (Level 3):* Use your fingertips to gently massage your temples and the base of your skull in slow, circular motions for two minutes.
-4. *Darkness and Quiet (Level 4):* Find a dark, quiet room and close your eyes for 15 minutes to allow your nervous system to rest.
-5. *Aromatherapy (Level 5):* Gently inhale the scent of peppermint or lavender essential oil (avoid direct skin contact near eyes).
-6. *Tension Release Stretch (Level 6):* Perform slow neck rolls, dropping your chin to your chest and then gently bringing your ear toward your shoulder on each side.
-7. *Mindful Breathing (Level 7):* Practice box breathing (inhale 4, hold 4, exhale 4, hold 4) for five minutes to reduce overall body tension.
+function appendMessage(content, sender) {
+  const div = document.createElement('div');
+  div.className = `message ${sender}`;
+  div.innerHTML = content;
+  chatWindow.appendChild(div);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
 
-Remember, if the pain worsens or persists, please consult a healthcare professional.`,
+function showLoading() {
+  sendBtn.disabled = true;
+  const loader = document.createElement('div');
+  loader.className = 'message bot loader-bubble';
+  loader.innerHTML = `<div class="loader" role="status" aria-live="polite" aria-label="Loading"></div>`;
+  chatWindow.appendChild(loader);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+  return loader;
+}
 
-        'sore throat': `Here are some easy remedies for a sore throat:
+function removeLoading(loader) {
+  if (loader) loader.remove();
+  sendBtn.disabled = false;
+}
 
-1. *Gargle warm salt water (Level 1).*
-2. *Drink warm herbal tea with honey (Level 2).*
-3. *Use throat lozenges (Level 3).*
-4. *Stay hydrated throughout the day (Level 4).*
-5. *Humidify your room (Level 5).*
-6. *Rest your voice (Level 6).*
-7. *Avoid irritants like smoke (Level 7).*
+function getRemedy(symptom, lang='en') {
+  const key = symptom.trim().toLowerCase();
+  return remedies[lang][key] || remedies[lang].default;
+}
 
-If symptoms worsen, please seek medical advice.`,
+function saveChat() {
+  const data = [];
+  chatWindow.querySelectorAll('.message').forEach(div => {
+    data.push({ sender: div.classList.contains('user') ? 'user' : 'bot', content: div.innerHTML });
+  });
+  localStorage.setItem('chatHistory', JSON.stringify(data));
+  localStorage.setItem('selectedLang', langSelect.value);
+}
 
-        default: Sorry, I don't have a specific remedy for that symptom yet. Try "headache" or "sore throat".
-      },
-      hi: {
-        headache: `सरदर्द के लिए ये घरेलू उपाय मदद कर सकते हैं:
+function loadChat() {
+  const data = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+  data.forEach(msg => appendMessage(msg.content, msg.sender));
+  const storedLang = localStorage.getItem('selectedLang');
+  if (storedLang && remedies[storedLang]) langSelect.value = storedLang;
+}
 
-1. *जल जल्दी पिएं (स्तर 1):* धीरे-धीरे एक बड़ा गिलास पानी पिएं। निर्जलीकरण सिरदर्द का एक आम कारण है।
-2. *ठंडी पट्टी (स्तर 2):* माथे या गर्दन के पीछे 10-15 मिनट के लिए ठंडी पट्टी लगाएं।
-3. *माथे की मालिश (स्तर 3):* धीरे-धीरे अपने माथे और गर्दन के पीछे उंगलियों से मालिश करें।
-4. *अंधेरे और शांत कमरे में आराम (स्तर 4):* 15 मिनट के लिए आंखें बंद करके आराम करें।
-5. *खुशबू चिकित्सा (स्तर 5):* पुदीना या लैवेंडर के तेल की खुशबू सूंघें (धीरे-धीरे)।
-6. *गरदन की स्ट्रेचिंग (स्तर 6):* गर्दन धीरे-धीरे घुमाएं।
-7. *धीमी साँस लेना (स्तर 7):* साँस लें, रोकें, छोड़ें, रोकें (4 सेकंड का बॉक्स ब्रेथिंग)। 
+userInput.addEventListener('input', () => {
+  sendBtn.disabled = userInput.value.trim() === '';
+});
 
-अगर दर्द बढ़े या बना रहे, तो डॉक्टर से संपर्क करें।`,
+sendBtn.addEventListener('click', () => {
+  const input = userInput.value.trim();
+  if (!input) return;
+  appendMessage(input, 'user');
+  userInput.value = '';
+  sendBtn.disabled = true;
+  saveChat();
+  const loader = showLoading();
+  setTimeout(() => {
+    removeLoading(loader);
+    appendMessage(getRemedy(input, langSelect.value), 'bot');
+    saveChat();
+  }, 1500);
+});
 
-        'sore throat': `गले में खराश के लिए ये उपाय अपनाएं:
+userInput.addEventListener('keydown', e => {
+  if (e.key==='Enter' && !e.shiftKey) {
+    e.preventDefault(); 
+    if (!sendBtn.disabled) sendBtn.click();
+  }
+});
 
-1. *गर्म नमक पानी से गरारा करें (स्तर 1)।*
-2. *शहद वाली हर्बल चाय पिएं (स्तर 2)।*
-3. *गला साफ करने वाली गोलियाँ लें (स्तर 3)।*
-4. *पूरा दिन पानी पिएं (स्तर 4)।*
-5. *कमरे में नमी बढ़ाएं (स्तर 5)।*
-6. *अपनी आवाज़ को आराम दें (स्तर 6)।*
-7. *धूम्रपान से बचें (स्तर 7)।*
+darkModeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  darkModeToggle.textContent = document.body.classList.contains('dark') ? '☀' : '🌙';
+});
+darkModeToggle.textContent = '🌙';
 
-लक्षण बिगड़ने पर डॉक्टर से सलाह लें।`,
+micBtn.addEventListener('click', () => {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    alert('Speech recognition not supported.');
+    return;
+  }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.lang = langSelect.value==='hi' ? 'hi-IN' : 'en-US';
+  recognition.interimResults=false;
+  recognition.maxAlternatives=1;
+  recognition.start();
+  micBtn.disabled=true; micBtn.textContent='🎙...';
+  recognition.onresult=event=>{
+    userInput.value=event.results[0][0].transcript;
+    sendBtn.disabled=false;
+  };
+  recognition.onerror=()=>alert('Speech recognition error.');
+  recognition.onend=()=>{ micBtn.disabled=false; micBtn.textContent='🎤'; };
+});
 
-        default: माफ़ करें, उस लक्षण के लिए मेरे पास अभी कोई विशेष उपाय नहीं है। कृपया "सरदर्द" या "गले में खराश" जैसे सामान्य लक्षण आज़माएं।
-      }
-    };
+// Clear chat button
+clearBtn.addEventListener('click', () => {
+  localStorage.removeItem('chatHistory');
+  chatWindow.innerHTML='';
+  appendMessage("*Welcome!* I am your Home Remedy Guide. Tell me your minor symptom, and I'll provide helpful remedies.", 'bot');
+});
 
-    function formatContent(text) {
-      return text
-        .replace(/\\(.?)\\*/g, '<strong>$1</strong>')
-        .replace(/\n/g, '<br />');
-    }
-
-    function appendMessage(content, sender) {
-      const div = document.createElement('div');
-      div.className = message ${sender};
-      div.innerHTML = formatContent(content);
-      chatWindow.appendChild(div);
-      chatWindow.scrollTop = chatWindow.scrollHeight;
-    }
-
-    function showLoading() {
-      sendBtn.disabled = true;
-      const loader = document.createElement('div');
-      loader.className = 'message bot loader-bubble';
-      loader.innerHTML = <div class="loader" role="status" aria-live="polite" aria-label="Loading"></div>;
-      chatWindow.appendChild(loader);
-      chatWindow.scrollTop = chatWindow.scrollHeight;
-      return loader;
-    }
-
-    function removeLoading(loader) {
-      if (loader) loader.remove();
-      sendBtn.disabled = false;
-    }
-
-    function getRemedy(symptom, lang = 'en') {
-      const key = symptom.trim().toLowerCase();
-      return remedies[lang][key] || remedies[lang].default;
-    }
-
-    function saveChat() {
-      const data = [];
-      chatWindow.querySelectorAll('.message').forEach(div => {
-        data.push({
-          sender: div.classList.contains('user') ? 'user' : 'bot',
-          content: div.innerHTML
-        });
-      });
-      localStorage.setItem('chatHistory', JSON.stringify(data));
-      localStorage.setItem('selectedLang', langSelect.value);
-    }
-
-    function loadChat() {
-      const data = JSON.parse(localStorage.getItem('chatHistory') || '[]');
-      data.forEach(msg => {
-        const div = document.createElement('div');
-        div.className = message ${msg.sender};
-        div.innerHTML = msg.content;
-        chatWindow.appendChild(div);
-      });
-      chatWindow.scrollTop = chatWindow.scrollHeight;
-      const storedLang = localStorage.getItem('selectedLang');
-      if (storedLang && remedies[storedLang]) {
-        langSelect.value = storedLang;
-      }
-    }
-
-    userInput.addEventListener('input', () => {
-      sendBtn.disabled = userInput.value.trim() === '';
-      sendBtn.setAttribute('aria-disabled', sendBtn.disabled.toString());
-    });
-
-    sendBtn.addEventListener('click', () => {
-      const input = userInput.value.trim();
-      if (!input) return;
-      appendMessage(input, 'user');
-      userInput.value = '';
-      sendBtn.disabled = true;
-
-      saveChat();
-
-      const loader = showLoading();
-
-      setTimeout(() => {
-        removeLoading(loader);
-        const remedy = getRemedy(input, langSelect.value);
-        appendMessage(remedy, 'bot');
-        saveChat();
-      }, 1500);
-    });
-
-    userInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (!sendBtn.disabled) sendBtn.click();
-      }
-    });
-
-    darkModeToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark');
-      darkModeToggle.textContent = document.body.classList.contains('dark') ? '☀' : '🌙';
-    });
-    darkModeToggle.textContent = '🌙';
-
-    micBtn.addEventListener('click', () => {
-      if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-        alert('Sorry, your browser does not support Speech Recognition.');
-        return;
-      }
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.lang = langSelect.value === 'hi' ? 'hi-IN' : 'en-US';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.start();
-
-      micBtn.disabled = true;
-      micBtn.textContent = '🎙...';
-
-      recognition.onresult = (event) => {
-        const speechResult = event.results[0][0].transcript;
-        userInput.value = speechResult;
-        sendBtn.disabled = false;
-        sendBtn.setAttribute('aria-disabled', 'false');
-        userInput.focus();
-      };
-
-      recognition.onerror = () => {
-        alert('Speech recognition error. Please try again.');
-      };
-
-      recognition.onend = () => {
-        micBtn.disabled = false;
-        micBtn.textContent = '🎤';
-      };
-    });
-
-    window.addEventListener('DOMContentLoaded', () => {
-      loadChat();
-      if (chatWindow.children.length === 0) {
-        appendMessage("*Welcome!* I am your Home Remedy Guide. Tell me your minor symptom, and I'll provide helpful remedies.", 'bot');
-      }
-    });
-  </script>
+window.addEventListener('DOMContentLoaded', () => {
+  loadChat();
+  if (chatWindow.children.length===0) {
+    appendMessage("*Welcome!* I am your Home Remedy Guide. Tell me your minor symptom, and I'll provide helpful remedies.", 'bot');
+  }
+});
+</script>
 </body>
 </html>
